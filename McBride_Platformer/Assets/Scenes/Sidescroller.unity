@@ -1693,9 +1693,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a1ce42ea3e3dd44868493ae73ec06d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  acceleration: 0
-  deceleration: 0
-  maxSpeed: 0
+  acceleration: 0.5
+  deceleration: 1
+  maxSpeed: 3
   solidGround:
     serializedVersion: 2
     m_Bits: 64

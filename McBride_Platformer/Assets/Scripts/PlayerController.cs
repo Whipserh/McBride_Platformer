@@ -22,8 +22,10 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Debug.DrawLine(transform.position + new Vector3(0, apexHeight), transform.position + new Vector3(2, apexHeight), Color.red);
 
-        Debug.Log(IsGrounded());
+
+        //Debug.Log(IsGrounded());
 
         //change the direction that the player is facing.
         if (Input.GetKeyDown(KeyCode.D))
@@ -39,7 +41,7 @@ public class PlayerController : MonoBehaviour
 
         //The input from the player needs to be determined and then passed in the to the MovementUpdate which should
         //manage the actual movement of the character.
-        Vector2 playerInput = new Vector2();
+        playerInput = Vector2.zero;
         if (Input.GetKey(KeyCode.D))
         {
             playerInput.x++;
@@ -49,39 +51,81 @@ public class PlayerController : MonoBehaviour
         {
             playerInput.x--;
         }
-
+        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
+        {
+            playerInput.y++;
+        }
 
         playerInput.Normalize();//normalize the direction
         MovementUpdate(playerInput);
     }
 
     //acceleration and deceleration are both positive terms
-    public float acceleration, deceleration;
+    
     public float maxSpeed;
-
+    private float landed_time = 0;
     private void MovementUpdate(Vector2 playerInput)
     {
-        Debug.Log(playerInput);
+        
+        if(rb.velocity.y != 0)
+        {
+            Debug.Log(landed_time);
+            landed_time = Time.realtimeSinceStartup;
+        }
+        
 
         //horizontal movement
+        RIGHT = playerInput.x > 0;
+        LEFT = playerInput.x < 0;
 
-        float force;
-        
-        if (playerInput.x != 0)//if we are moving then we add accleration force
-            force = rb.mass * acceleration;
-        else//else we are slowing down
-            force = rb.mass * -1* deceleration;
-        
-        //apply the force
-        rb.AddForce(playerInput * force);
-        
         //cap the max speed incase force is too strong
-        if (rb.velocity.magnitude > maxSpeed)
+        if (Mathf.Abs(rb.velocity.x) > maxSpeed)
         {
-            rb.velocity = rb.velocity.normalized * maxSpeed;
+            float direction = rb.velocity.normalized.x;
+            rb.velocity = new Vector2(maxSpeed * direction, rb.velocity.y);
+        }
+        
+        //JUMP - this is up here and not in the fixed update because the change happens in the frame not the , plus its an instant change not a change over time
+        float initalJumpVelocoty = 2 * apexHeight / apexTime;
+        if (playerInput.y > 0 && (IsGrounded()|| Time.realtimeSinceStartup - landed_time < coyoteTime))//either the player is grounded or its been a couple of seconds since they left the ground
+        {
+            rb.velocity += initalJumpVelocoty * Vector2.up;
         }
 
+        //PLAYER TERMINAL VELOCITY
+        if (rb.velocity.y < -terminalVelocity)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, -terminalVelocity);
+        }
     }
+
+    public float acceleration, deceleration;
+    private bool LEFT = false, RIGHT = false;
+    private Vector2 playerInput;
+
+    private void FixedUpdate()
+    {
+        //horizontal movement
+        if (RIGHT)
+        {
+            rb.velocity += Vector2.right * Time.fixedDeltaTime * acceleration;
+        }
+        else if (LEFT)
+        {
+            rb.velocity += Vector2.left * Time.fixedDeltaTime * acceleration;
+        }
+        else // if we aren't moving then we should slow down
+        {
+            rb.velocity -= new Vector2(rb.velocity.x, 0).normalized * Time.fixedDeltaTime * deceleration;
+        }
+
+        //GRAVITY
+        float gravity = -2 * apexHeight / Mathf.Pow(apexTime, 2);
+        rb.velocity += gravity * Time.deltaTime * Vector2.up;
+    }
+
+    public float coyoteTime;
+    public float terminalVelocity, apexTime, apexHeight;
 
     public bool IsWalking()
     {
@@ -92,8 +136,8 @@ public class PlayerController : MonoBehaviour
     }
 
     public LayerMask solidGround;
-    public new Vector2 boxSize;
-    public float fallDistance;
+    public Vector2 boxSize;
+    
     public bool IsGrounded()
     {
         

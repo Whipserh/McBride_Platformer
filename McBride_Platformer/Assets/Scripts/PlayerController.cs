@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -22,8 +23,8 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
-        Debug.Log(IsGrounded());
+        //------------------------------------------------------player side to side movement
+        //Debug.Log(IsGrounded());
 
         //change the direction that the player is facing.
         if (Input.GetKeyDown(KeyCode.D))
@@ -33,13 +34,10 @@ public class PlayerController : MonoBehaviour
         {
             currentFacingDirection = FacingDirection.left;
         }
-        
-
-
 
         //The input from the player needs to be determined and then passed in the to the MovementUpdate which should
         //manage the actual movement of the character.
-        Vector2 playerInput = new Vector2();
+        Vector2 playerInput = Vector2.zero;
         if (Input.GetKey(KeyCode.D))
         {
             playerInput.x++;
@@ -50,10 +48,28 @@ public class PlayerController : MonoBehaviour
             playerInput.x--;
         }
 
+        //----------------------------------------------------------player jump controls
+        // only jump if our character is touching the ground
+        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
+        {
+            playerInput.y++;
+        }
+
+
+        
 
         playerInput.Normalize();//normalize the direction
         MovementUpdate(playerInput);
+
+
+        
     }
+    public float apexTime, apexHeight, terminalFallingSpeed;
+
+
+
+
+
 
     //acceleration and deceleration are both positive terms
     public float acceleration, deceleration;
@@ -74,13 +90,42 @@ public class PlayerController : MonoBehaviour
         
         //apply the force
         rb.AddForce(playerInput * force);
-        
+        /*
         //cap the max speed incase force is too strong
         if (rb.velocity.magnitude > maxSpeed)
         {
             rb.velocity = rb.velocity.normalized * maxSpeed;
         }
+        */
 
+
+
+        //-----------------------------------------------------------------------------------------------JUMP
+        float initalJumpVelocity = 2 * apexHeight / apexTime;//inital velocity is equal to the inital acceleration of the character
+        float gravity = -2 * apexHeight / (Mathf.Pow(apexTime, 2)); // this is equivalent to acceletation gravity
+        if (playerInput.y > 0)// the player jumped
+        {
+            //apply the force
+            Debug.Log((transform.up * initalJumpVelocity) * rb.mass);
+            rb.AddForce((transform.up * initalJumpVelocity) * rb.mass );
+        }//---------------------------------------------------------------------GRAVITY
+
+            //apply the gravity to the player
+            //mass of player * direction acceleration
+            //direction acceleration = direction_V * gravity
+
+            rb.AddForce(rb.mass * gravity * (transform.up));
+        
+
+
+        
+       /* 
+        
+        if(rb.velocity.y > terminalFallingSpeed)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, terminalFallingSpeed);
+        }
+       */
     }
 
     public bool IsWalking()
@@ -92,8 +137,7 @@ public class PlayerController : MonoBehaviour
     }
 
     public LayerMask solidGround;
-    public new Vector2 boxSize;
-    public float fallDistance;
+    public Vector2 boxSize;
     public bool IsGrounded()
     {
         

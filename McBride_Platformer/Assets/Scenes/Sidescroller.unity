@@ -1696,7 +1696,7 @@ MonoBehaviour:
   maxSpeed: 3
   acceleration: 10
   deceleration: 1
-  coyoteTime: 0
+  coyoteTime: 10
   terminalVelocity: 10
   apexTime: 1
   apexHeight: 4

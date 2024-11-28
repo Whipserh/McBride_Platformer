@@ -22,9 +22,6 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //Debug.DrawLine(transform.position + new Vector3(0, apexHeight), transform.position + new Vector3(2, apexHeight), Color.red);
-        
-        
         //change the direction that the player is facing.
         if (Input.GetKeyDown(KeyCode.D))
         {
@@ -47,30 +44,35 @@ public class PlayerController : MonoBehaviour
         {
             playerInput.x--;
         }
-        if (Input.GetKeyDown(KeyCode.Space)  &&(IsGrounded() || Time.realtimeSinceStartup - landed_time < coyoteTime))
+
+        Debug.Log(Time.realtimeSinceStartup - landed_time < coyoteTime && !JUMPED);
+        // (Did the player hit the button) && is the player grounded
+        if (Input.GetKeyDown(KeyCode.Space)  && (IsGrounded() || (Time.realtimeSinceStartup - landed_time < coyoteTime && !JUMPED))) 
         {
-            
+            Debug.Log("Jump"); 
+            JUMPED = true;
             playerInput.y++;
         }
 
-
-        playerInput.Normalize();//normalize the direction
         MovementUpdate(playerInput);
     }
 
     //acceleration and deceleration are both positive terms
-    
+    public float acceleration, deceleration;
+    private bool LEFT = false, RIGHT = false, JUMPED = false;
+    private Vector2 playerInput;
     public float maxSpeed;
-    private float landed_time = 0;
+    private float landed_time = 0; 
+
+
+
+
+
+
+
     private void MovementUpdate(Vector2 playerInput)
     {
-        
-        if(IsGrounded())
-        {
-            Debug.Log("Landed");
-            JUMPED = false;
-            landed_time = Time.realtimeSinceStartup;
-        }
+
         
 
         //horizontal movement
@@ -84,13 +86,12 @@ public class PlayerController : MonoBehaviour
             rb.velocity = new Vector2(maxSpeed * direction, rb.velocity.y);
         }
 
-        //Debug.Log(Time.realtimeSinceStartup - landed_time);
-        Debug.Log(Time.realtimeSinceStartup - landed_time < coyoteTime);
+
+   
         //JUMP - this is up here and not in the fixed update because the change happens in the frame not the , plus its an instant change not a change over time
         float initalJumpVelocoty = 2 * apexHeight / apexTime;
-        if (playerInput.y > 0 && !JUMPED)//either the player is grounded or its been a couple of seconds since they left the ground
+        if (playerInput.y > 0)//either the player is grounded or its been a couple of seconds since they left the ground
         {
-            JUMPED = true;
             rb.velocity += initalJumpVelocoty * Vector2.up;
         }
 
@@ -101,12 +102,18 @@ public class PlayerController : MonoBehaviour
         }
     }//end movement update
 
-    public float acceleration, deceleration;
-    private bool LEFT = false, RIGHT = false, JUMPED = false;
-    private Vector2 playerInput;
-
+    
     private void FixedUpdate()
     {
+        //if the player made contact the with ground then update the JUMPED variable
+        if (IsGrounded())
+        {
+            Debug.Log("Landed");
+            JUMPED = false;
+            landed_time = Time.realtimeSinceStartup;
+        } 
+
+
         //horizontal movement
         if (RIGHT)
         {
@@ -146,7 +153,6 @@ public class PlayerController : MonoBehaviour
         //make a box cast
         if (!Physics2D.BoxCast(transform.position, boxSize, 0f, -transform.up, 0.5f, solidGround)) 
         {
-            
             return false;
         }
         return true;

@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -5,6 +6,14 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+
+    public enum CharacterState
+    {
+        idle, walk, jump, die
+    }
+    public CharacterState currentCharacterState = CharacterState.idle;
+    public CharacterState previousCharacterState = CharacterState.idle;
+
     public enum FacingDirection
     {
         left, right
@@ -13,15 +22,81 @@ public class PlayerController : MonoBehaviour
     private FacingDirection currentFacingDirection = FacingDirection.right;
     private Rigidbody2D rb;
 
-    // Start is called before the first frame update
     void Start()
     {
         rb = gameObject.GetComponent<Rigidbody2D>();
     }
 
-    // Update is called once per frame
     void Update()
     {
+        //****************************************************************************Character state
+
+        //save the previous character state
+        previousCharacterState = currentCharacterState;
+
+        //update the current state that we are in
+        if (IsDead())//if our character is dead then we don't need to look at anything else. 
+        {
+            currentCharacterState = CharacterState.die;
+        }
+        
+        switch (currentCharacterState)
+        {
+            case CharacterState.idle:
+                if (IsWalking())
+                {
+                    currentCharacterState = CharacterState.walk;
+                }
+                if (!IsGrounded())
+                {
+                    currentCharacterState = CharacterState.jump;
+                }
+                break;
+            case CharacterState.walk:
+                if (!IsWalking())
+                {
+                    //if we are on the ground from walking and we are not walking
+                    currentCharacterState = CharacterState.idle;
+                }
+                if (!IsGrounded())
+                {
+                    currentCharacterState = CharacterState.jump;
+                }
+                break;
+            case CharacterState.jump:
+                if (IsGrounded())
+                {
+                    if (IsWalking())
+                    {
+                        currentCharacterState = CharacterState.walk;
+                    }
+                    else
+                    {
+                        currentCharacterState = CharacterState.idle;
+                    }
+                }
+                break;
+            case CharacterState.die:
+                //this does not have anything cause we want a very hard death moment
+                break;
+        }
+
+
+        if (!IsGrounded())//we are in the air
+        {
+            Debug.Log("in the air");
+            coyoteTimeElapsed = 0;
+        }
+        else//we landed
+        {
+            
+            JUMPED = false;
+        }
+
+
+        //****************************************************************************Facing Direction
+
+
         //change the direction that the player is facing.
         if (Input.GetKeyDown(KeyCode.D))
         {
@@ -32,8 +107,9 @@ public class PlayerController : MonoBehaviour
         }
         
 
-        //The input from the player needs to be determined and then passed in the to the MovementUpdate which should
-        //manage the actual movement of the character.
+        //The input from the player needs to be determined and then passed
+        //in the to the MovementUpdate which should manage the actual
+        //movement of the character.
         playerInput = Vector2.zero;
         if (Input.GetKey(KeyCode.D))
         {
@@ -45,40 +121,43 @@ public class PlayerController : MonoBehaviour
             playerInput.x--;
         }
 
-        Debug.Log(Time.realtimeSinceStartup - landed_time < coyoteTime && !JUMPED);
-        // (Did the player hit the button) && is the player grounded
-        if (ToggleDoubleJump)
-            FALLING = true;
 
-        //*********** Removing falling enables double jump
-        if (Input.GetKeyDown(KeyCode.Space)  && (IsGrounded() || (Time.realtimeSinceStartup - landed_time < coyoteTime && FALLING &&!JUMPED))) 
+
+        
+        if (Input.GetKeyDown(KeyCode.Space)  && legibleJump()) 
         {
-            //Debug.Log("Jump"); 
             JUMPED = true;
             playerInput.y++;
         }
 
         MovementUpdate(playerInput);
+
+        coyoteTimeElapsed+=Time.deltaTime;
+
+        
     }
-    public bool ToggleDoubleJump;
+    
     //acceleration and deceleration are both positive terms
     public float acceleration, deceleration;
     private bool LEFT = false, RIGHT = false, JUMPED = false;
     private Vector2 playerInput;
     public float maxSpeed;
-    private float landed_time = 0; 
+    
 
 
-
+    public bool legibleJump()
+    {
+        Debug.Log(JUMPED);
+        //coyote time should only start counting the moment the player is not longer on the ground
+        return !JUMPED && (IsGrounded() || (coyoteTimeElapsed < coyoteTime));
+    }
+    private float coyoteTimeElapsed = 0; // resets after jumping
 
 
 
 
     private void MovementUpdate(Vector2 playerInput)
     {
-
-        
-
         //horizontal movement
         RIGHT = playerInput.x > 0;
         LEFT = playerInput.x < 0;
@@ -90,8 +169,6 @@ public class PlayerController : MonoBehaviour
             rb.velocity = new Vector2(maxSpeed * direction, rb.velocity.y);
         }
 
-
-   
         //JUMP - this is up here and not in the fixed update because the change happens in the frame not the , plus its an instant change not a change over time
         float initalJumpVelocoty = 2 * apexHeight / apexTime;
         if (playerInput.y > 0)//either the player is grounded or its been a couple of seconds since they left the ground
@@ -107,17 +184,8 @@ public class PlayerController : MonoBehaviour
     }//end movement update
 
     private bool FALLING = false;
-    
     private void FixedUpdate()
     {
-        //if the player made contact the with ground then update the JUMPED variable
-        if (IsGrounded() && rb.velocity.y == 0)
-        {
-            Debug.Log("Landed");
-            JUMPED = false;
-            landed_time = Time.realtimeSinceStartup;
-        } 
-
         FALLING = rb.velocity.y < 0; //we are falling if velocity is < 0
 
         //horizontal movement
@@ -132,7 +200,7 @@ public class PlayerController : MonoBehaviour
         else // if we aren't moving then we should slow down
         {
             rb.velocity -= new Vector2(rb.velocity.x, 0).normalized * Time.fixedDeltaTime * deceleration;
-            if (rb.velocity.x < 0.01)
+            if (Mathf.Abs(rb.velocity.x) < 0.01)
             {
                 rb.velocity = new Vector2(0, rb.velocity.y);
             }
@@ -166,13 +234,13 @@ public class PlayerController : MonoBehaviour
     
     public bool IsGrounded()
     {
-        
-        //make a box cast
-        if (!Physics2D.BoxCast(transform.position, boxSize, 0f, -transform.up, 0.5f, solidGround)) 
-        {
-            return false;
-        }
-        return true;
+        return Physics2D.BoxCast(transform.position, boxSize, 0f, -transform.up, 0.5f, solidGround) && rb.velocity.y < 0.01f;
+    }
+
+    //referenced in the animator
+    public void OnAnimationDeathCompleet()
+    {
+        gameObject.SetActive(false);
     }
 
     public FacingDirection GetFacingDirection()

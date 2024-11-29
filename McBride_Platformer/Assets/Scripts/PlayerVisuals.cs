@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static PlayerController;
 
 /// <summary>
 /// This script manages updating the visuals of the character based on the values that are passed to it from the PlayerController.
@@ -33,12 +34,32 @@ public class PlayerVisuals : MonoBehaviour
     //It is not recommended to make changes to the functionality of this code for the W10 journal.
     private void VisualsUpdate()
     {
-
+        /**
         animator.SetBool(isWalkingHash, playerController.IsWalking());
         animator.SetBool(isGroundedHash, playerController.IsGrounded());
         
        if(playerController.IsDead())
         animator.SetTrigger(onDieHash);
+        **/
+
+        if(playerController.previousCharacterState != playerController.currentCharacterState)
+        {
+            switch (playerController.currentCharacterState)
+            {
+                case CharacterState.idle:
+                    animator.CrossFade("Idle", 0f);
+                    break;
+                case CharacterState.walk:
+                    animator.CrossFade("Walking", 0f);
+                    break;
+                case CharacterState.jump:
+                    animator.CrossFade("Jumping", 0f);
+                    break;
+                case CharacterState.die:
+                    animator.CrossFade("Die", 0f);
+                    break;
+            }
+        }
 
 
         switch (playerController.GetFacingDirection())

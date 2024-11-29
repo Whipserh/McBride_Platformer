@@ -47,16 +47,20 @@ public class PlayerController : MonoBehaviour
 
         Debug.Log(Time.realtimeSinceStartup - landed_time < coyoteTime && !JUMPED);
         // (Did the player hit the button) && is the player grounded
-        if (Input.GetKeyDown(KeyCode.Space)  && (IsGrounded() || (Time.realtimeSinceStartup - landed_time < coyoteTime && !JUMPED))) 
+        if (ToggleDoubleJump)
+            FALLING = true;
+
+        //*********** Removing falling enables double jump
+        if (Input.GetKeyDown(KeyCode.Space)  && (IsGrounded() || (Time.realtimeSinceStartup - landed_time < coyoteTime && FALLING &&!JUMPED))) 
         {
-            Debug.Log("Jump"); 
+            //Debug.Log("Jump"); 
             JUMPED = true;
             playerInput.y++;
         }
 
         MovementUpdate(playerInput);
     }
-
+    public bool ToggleDoubleJump;
     //acceleration and deceleration are both positive terms
     public float acceleration, deceleration;
     private bool LEFT = false, RIGHT = false, JUMPED = false;
@@ -102,17 +106,19 @@ public class PlayerController : MonoBehaviour
         }
     }//end movement update
 
+    private bool FALLING = false;
     
     private void FixedUpdate()
     {
         //if the player made contact the with ground then update the JUMPED variable
-        if (IsGrounded())
+        if (IsGrounded()&&rb.velocity.y == 0)
         {
             Debug.Log("Landed");
             JUMPED = false;
             landed_time = Time.realtimeSinceStartup;
         } 
 
+        FALLING = rb.velocity.y < 0; //we are falling if velocity is < 0
 
         //horizontal movement
         if (RIGHT)

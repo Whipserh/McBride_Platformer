@@ -111,7 +111,7 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         //if the player made contact the with ground then update the JUMPED variable
-        if (IsGrounded()&&rb.velocity.y == 0)
+        if (IsGrounded() && rb.velocity.y == 0)
         {
             Debug.Log("Landed");
             JUMPED = false;
@@ -132,6 +132,10 @@ public class PlayerController : MonoBehaviour
         else // if we aren't moving then we should slow down
         {
             rb.velocity -= new Vector2(rb.velocity.x, 0).normalized * Time.fixedDeltaTime * deceleration;
+            if (rb.velocity.x < 0.01)
+            {
+                rb.velocity = new Vector2(0, rb.velocity.y);
+            }
         }
 
         //GRAVITY
@@ -141,6 +145,13 @@ public class PlayerController : MonoBehaviour
 
     public float coyoteTime;
     public float terminalVelocity, apexTime, apexHeight;
+
+    public int currentHealth = 10;
+
+    public bool IsDead()
+    {
+        return currentHealth <= 0;
+    }
 
     public bool IsWalking()
     {

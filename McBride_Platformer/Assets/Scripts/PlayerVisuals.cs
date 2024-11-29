@@ -12,13 +12,16 @@ public class PlayerVisuals : MonoBehaviour
     public SpriteRenderer bodyRenderer;
     public PlayerController playerController;
 
-    private int isWalkingHash, isGroundedHash;
+    private int isWalkingHash, isGroundedHash, onDieHash;
 
     // Start is called before the first frame update
     void Start()
     {
+        //the reason why we choose to use hash is because it is less task expensive
+        //it is expensive to pass a string to a hash, so if we do that every frame things can start to slow down. 
         isWalkingHash = Animator.StringToHash("IsWalking");
         isGroundedHash = Animator.StringToHash("IsGrounded");
+        onDieHash = Animator.StringToHash("OnDeath");
     }
 
     // Update is called once per frame
@@ -30,8 +33,14 @@ public class PlayerVisuals : MonoBehaviour
     //It is not recommended to make changes to the functionality of this code for the W10 journal.
     private void VisualsUpdate()
     {
+
         animator.SetBool(isWalkingHash, playerController.IsWalking());
         animator.SetBool(isGroundedHash, playerController.IsGrounded());
+        
+       if(playerController.IsDead())
+        animator.SetTrigger(onDieHash);
+
+
         switch (playerController.GetFacingDirection())
         {
             case PlayerController.FacingDirection.left:

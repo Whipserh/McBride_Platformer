@@ -2,6 +2,7 @@ using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -84,7 +85,7 @@ public class PlayerController : MonoBehaviour
 
         if (!IsGrounded())//we are in the air
         {
-            Debug.Log("in the air");
+            //Debug.Log("in the air");
             coyoteTimeElapsed = 0;
         }
         else//we landed
@@ -124,7 +125,7 @@ public class PlayerController : MonoBehaviour
 
 
         
-        if (Input.GetKeyDown(KeyCode.Space)  && legibleJump()) 
+        if (Input.GetKeyDown(KeyCode.Space)  && (legibleJump()|| legibleWallJump())) 
         {
             JUMPED = true;
             playerInput.y++;
@@ -147,11 +148,42 @@ public class PlayerController : MonoBehaviour
 
     public bool legibleJump()
     {
-        Debug.Log(JUMPED);
+        //Debug.Log(JUMPED);
+       
         //coyote time should only start counting the moment the player is not longer on the ground
-        return !JUMPED && (IsGrounded() || (coyoteTimeElapsed < coyoteTime));
+        return (!JUMPED && (IsGrounded() || (coyoteTimeElapsed < coyoteTime)));
     }
     private float coyoteTimeElapsed = 0; // resets after jumping
+
+    public bool legibleWallJump()
+    {
+        //********************************************Get the side of the player that is touching the wall
+        float direction = 0;
+        if(Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.left, 0.5f, solidGround))//check left
+        {
+            Debug.Log("left");
+            direction = 0;//left
+        }else if(Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.right, 0.5f, solidGround))//check right
+        {
+            Debug.Log("right");
+            direction = 1;//right
+        }
+        else//we don't see any legible position so 
+        {
+            return false;
+        }
+        //there is an object besides us if we make it HERE
+
+
+        //check to see if the player is mid air
+        if (!IsGrounded())
+        {
+            //project the player in the opposite direction from the wall
+            rb.velocity= Vector2.Lerp(new Vector2(2*maxSpeed, rb.velocity.y), new Vector2(-2*maxSpeed, rb.velocity.y), direction);
+            return true;
+        }
+        return false;
+    }
 
 
 

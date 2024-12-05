@@ -239,9 +239,15 @@ public class PlayerController : MonoBehaviour
         }
 
         //GRAVITY
-        float gravity = -2 * apexHeight / Mathf.Pow(apexTime, 2);
+        if (rb.velocity.y > 0) { // soft gravity
+            gravity = -2 * apexHeight / Mathf.Pow(apexTime, 2);
+        } else
+        {
+            gravity = -2 * apexHeight / Mathf.Pow(apexTime * 0.75f, 2);
+        }
         rb.velocity += gravity * Time.deltaTime * Vector2.up;
     }
+    private float gravity;
 
     public float coyoteTime;
     public float terminalVelocity, apexTime, apexHeight;

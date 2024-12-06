@@ -1728,19 +1728,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a1ce42ea3e3dd44868493ae73ec06d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentCharacterState: 0
-  previousCharacterState: 0
   acceleration: 10
   deceleration: 1
   maxSpeed: 3
+  currentCharacterState: 0
+  previousCharacterState: 0
   dashDistance: 4
   dashTime: 0.5
-  DASHING: 0
-  fallTime: 0.75
-  coyoteTime: 4
   terminalVelocity: 10
-  apexTime: 1
+  apexTime: 0.75
   apexHeight: 4
+  fallTime: 0.5
+  coyoteTime: 4
   currentHealth: 10
   solidGround:
     serializedVersion: 2

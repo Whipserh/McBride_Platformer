@@ -248,7 +248,7 @@ public class PlayerController : MonoBehaviour
         //cap the max speed incase force is too strong
         if (Mathf.Abs(rb.velocity.x) > maxSpeed)
         {
-            float direction = rb.velocity.normalized.x;
+            float direction = new Vector2(rb.velocity.x, 0).normalized.x;
             rb.velocity = new Vector2(maxSpeed * direction, rb.velocity.y);
         }
 
@@ -305,18 +305,18 @@ public class PlayerController : MonoBehaviour
         //horizontal movement
         if (RIGHT)
         {
-            Debug.Log("right");
+            //Debug.Log("right");
             rb.velocity += Vector2.right * Time.fixedDeltaTime * acceleration;
         }
         else if (LEFT)
         {
-            Debug.Log("left");
+            //Debug.Log("left");
             rb.velocity += Vector2.left * Time.fixedDeltaTime * acceleration;
         }
         else // if we aren't moving then we should slow down
         {
 
-            Debug.Log(currentFacingDirection);
+            //Debug.Log(currentFacingDirection);
             rb.velocity -= new Vector2(rb.velocity.x, 0).normalized * Time.fixedDeltaTime * deceleration;
             if (Mathf.Abs(rb.velocity.x) < 0.1)
             {

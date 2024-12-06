@@ -8,15 +8,45 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
 
- 
+
+    //acceleration and deceleration are both positive terms
+    public float acceleration, deceleration;
+    private bool LEFT = false, RIGHT = false, JUMPED = false;
+    private Vector2 playerInput;
+    public float maxSpeed;
+
+    private float coyoteTimeElapsed = 0; // resets after jumping
+
+    public CharacterState currentCharacterState = CharacterState.idle;
+    public CharacterState previousCharacterState = CharacterState.idle;
+
+
+    //variables for dashing mechanics
+    private bool DASHING; // if we are in the state of dashing
+    private bool hadDashed; //if we had already dashed before value is reset
+    public float dashDistance, dashTime;
+    private float dashElapsedTime = 0;
+
+
+    private bool FALLING = false;
+
+    private float gravity;
+    public float terminalVelocity, apexTime, apexHeight;
+    public float fallTime;
+    public float coyoteTime;
+    
+
+    public int currentHealth = 10;
+
+    //is ground variables
+    public LayerMask solidGround;//what layers act as the ground
+    public Vector2 boxSize;//rough bottom hitbox
 
 
     public enum CharacterState
     {
         idle, walk, jump, die
     }
-    public CharacterState currentCharacterState = CharacterState.idle;
-    public CharacterState previousCharacterState = CharacterState.idle;
 
     public enum FacingDirection
     {
@@ -94,8 +124,8 @@ public class PlayerController : MonoBehaviour
         }
         else//we landed
         {
-            
-            JUMPED = false;
+            hadDashed = false; // reset the dash when the player touches the floor
+            JUMPED = false; //reset the jump when the player touches the ground
         }
 
 
@@ -103,10 +133,10 @@ public class PlayerController : MonoBehaviour
 
         if(!DASHING)
         //change the direction that the player is facing.
-        if (Input.GetKeyDown(KeyCode.D))
+        if (Input.GetKey(KeyCode.D))
         {
             currentFacingDirection = FacingDirection.right;
-        }else if (Input.GetKeyDown(KeyCode.A))
+        }else if (Input.GetKey(KeyCode.A))
         {
             currentFacingDirection = FacingDirection.left;
         }
@@ -119,7 +149,7 @@ public class PlayerController : MonoBehaviour
             DASHING = true;
         }
 
-        //*****************************************************************************Movement
+        //*****************************************************************************Movement co
         //The input from the player needs to be determined and then passed
         //in the to the MovementUpdate which should manage the actual
         //movement of the character.
@@ -151,36 +181,25 @@ public class PlayerController : MonoBehaviour
 
         
     }
-    
-    //acceleration and deceleration are both positive terms
-    public float acceleration, deceleration;
-    private bool LEFT = false, RIGHT = false, JUMPED = false;
-    private Vector2 playerInput;
-    public float maxSpeed;
-
-    //dash
-    public float dashDistance, dashTime;
-    private float dashElapsedTime = 0;
 
 
     public bool legibleJump()
     {
         //Debug.Log(JUMPED);
-       
+
         //coyote time should only start counting the moment the player is not longer on the ground
         return (!JUMPED && (IsGrounded() || (coyoteTimeElapsed < coyoteTime)));
     }
-    private float coyoteTimeElapsed = 0; // resets after jumping
 
     public bool legibleWallJump()
     {
         //********************************************Get the side of the player that is touching the wall
         float direction = 0;
-        if(Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.left, 0.5f, solidGround))//check left
+        if(Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.left, 0.75f, solidGround))//check left
         {
             //Debug.Log("left");
             direction = 0;//left
-        }else if(Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.right, 0.5f, solidGround))//check right
+        }else if(Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.right, 0.75f, solidGround))//check right
         {
             //Debug.Log("right");
             direction = 1;//right
@@ -203,8 +222,6 @@ public class PlayerController : MonoBehaviour
     }
 
 
-    public bool DASHING;
-    private bool hadDashed;
 
     public bool dashLegible()
     {
@@ -221,12 +238,12 @@ public class PlayerController : MonoBehaviour
     public int wallCollision()
     {
         int direction = -1;
-        if (Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.left, 0.5f, solidGround))//check left
+        if (Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.left, 0.75f, solidGround))//check left
         {
             //Debug.Log("left");
             direction = 0;//left
         }
-        else if (Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.right, 0.5f, solidGround))//check right
+        else if (Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.right, 0.75f, solidGround))//check right
         {
             //Debug.Log("right");
             direction = 1;//right
@@ -241,6 +258,9 @@ public class PlayerController : MonoBehaviour
 
     private void MovementUpdate(Vector2 playerInput)
     {
+
+        Debug.Log(playerInput);
+
         //horizontal movement
         RIGHT = playerInput.x > 0;
         LEFT = playerInput.x < 0;
@@ -256,7 +276,7 @@ public class PlayerController : MonoBehaviour
         float initalJumpVelocoty = 2 * apexHeight / apexTime;
         if (playerInput.y > 0)//either the player is grounded or its been a couple of seconds since they left the ground
         {
-            rb.velocity += initalJumpVelocoty * Vector2.up;
+            rb.velocity = new Vector2(rb.velocity.x, initalJumpVelocoty);
         }
 
         //PLAYER TERMINAL VELOCITY
@@ -266,20 +286,11 @@ public class PlayerController : MonoBehaviour
         }
     }//end movement update
     
-    private bool FALLING = false;
-
-
-
-
 
 
     private void FixedUpdate()
     {
-
-        if (IsGrounded())
-        {
-            hadDashed = false; // reset the dash when the player touches the floor
-        }
+        
 
         //******************************************** DASH
         dashElapsedTime += Time.fixedDeltaTime;
@@ -289,6 +300,8 @@ public class PlayerController : MonoBehaviour
             DASHING = false;
         }
 
+
+        //if we are dashing we move in a specific direction
         if (DASHING)
         {
             if(GetFacingDirection() == FacingDirection.right)
@@ -302,7 +315,7 @@ public class PlayerController : MonoBehaviour
 
         FALLING = rb.velocity.y < 0; //we are falling if velocity is < 0
 
-        //horizontal movement
+        //horizontal movement if the player pressed a button
         if (RIGHT)
         {
             //Debug.Log("right");
@@ -324,21 +337,17 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        
         //GRAVITY
         if (rb.velocity.y > 0) { // soft gravity
             gravity = -2 * apexHeight / Mathf.Pow(apexTime, 2);
         } else
         {
-            gravity = -2 * apexHeight / Mathf.Pow(apexTime * 0.75f, 2);
+            gravity = -2 * apexHeight / Mathf.Pow(fallTime, 2);
         }
+        if(!IsGrounded())
         rb.velocity += gravity * Time.deltaTime * Vector2.up;
     }
-    private float gravity;
-
-    public float coyoteTime;
-    public float terminalVelocity, apexTime, apexHeight;
-
-    public int currentHealth = 10;
 
     public bool IsDead()
     {
@@ -348,14 +357,12 @@ public class PlayerController : MonoBehaviour
     public bool IsWalking()
     {
         //if our character's horizontal speed is not 0 and they are not falling
-        if (rb.velocity.x != 0f && IsGrounded() && playerInput.x!=0)
+        if (Mathf.Abs(rb.velocity.x) >= 0.1f && IsGrounded())
             return true;
         return false;
     }
 
-    public LayerMask solidGround;
-    public Vector2 boxSize;
-    
+
     public bool IsGrounded()
     {
         return Physics2D.BoxCast(transform.position, boxSize, 0f, -transform.up, 0.5f, solidGround) && rb.velocity.y < 0.01f;

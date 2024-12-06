@@ -113,6 +113,7 @@ public class PlayerController : MonoBehaviour
         //****************************************************************************Dash controls
         if (Input.GetMouseButtonDown(0)  && dashLegible()) //can only DASHING if we aren't dashing
         {
+            hadDashed = true;
             Debug.Log("Dash");
             dashElapsedTime = 0;
             DASHING = true;
@@ -314,8 +315,10 @@ public class PlayerController : MonoBehaviour
         }
         else // if we aren't moving then we should slow down
         {
+
+            Debug.Log(currentFacingDirection);
             rb.velocity -= new Vector2(rb.velocity.x, 0).normalized * Time.fixedDeltaTime * deceleration;
-            if (Mathf.Abs(rb.velocity.x) < 0.01)
+            if (Mathf.Abs(rb.velocity.x) < 0.1)
             {
                 rb.velocity = new Vector2(0, rb.velocity.y);
             }
@@ -345,7 +348,7 @@ public class PlayerController : MonoBehaviour
     public bool IsWalking()
     {
         //if our character's horizontal speed is not 0 and they are not falling
-        if (rb.velocity.x != 0f && IsGrounded())
+        if (rb.velocity.x != 0f && IsGrounded() && playerInput.x!=0)
             return true;
         return false;
     }

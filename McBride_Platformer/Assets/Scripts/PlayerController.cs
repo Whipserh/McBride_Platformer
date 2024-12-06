@@ -8,6 +8,9 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
 
+ 
+
+
     public enum CharacterState
     {
         idle, walk, jump, die
@@ -25,6 +28,7 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+        DASHING = false;
         rb = gameObject.GetComponent<Rigidbody2D>();
     }
 
@@ -97,7 +101,7 @@ public class PlayerController : MonoBehaviour
 
         //****************************************************************************Facing Direction
 
-
+        if(!DASHING)
         //change the direction that the player is facing.
         if (Input.GetKeyDown(KeyCode.D))
         {
@@ -106,31 +110,40 @@ public class PlayerController : MonoBehaviour
         {
             currentFacingDirection = FacingDirection.left;
         }
-        
+        //****************************************************************************Dash controls
+        if (Input.GetMouseButtonDown(0)  && dashLegible()) //can only DASHING if we aren't dashing
+        {
+            Debug.Log("Dash");
+            dashElapsedTime = 0;
+            DASHING = true;
+        }
 
+        //*****************************************************************************Movement
         //The input from the player needs to be determined and then passed
         //in the to the MovementUpdate which should manage the actual
         //movement of the character.
         playerInput = Vector2.zero;
-        if (Input.GetKey(KeyCode.D))
+
+        //disable the controls if we are dashing
+        if (!DASHING)
         {
-            playerInput.x++;
+            if (Input.GetKey(KeyCode.D))
+            {
+                playerInput.x++;
+            }
+
+            if (Input.GetKey(KeyCode.A))
+            {
+                playerInput.x--;
+            }
+
+            //Jump
+            if (Input.GetKeyDown(KeyCode.Space) && (legibleJump() || legibleWallJump()))
+            {
+                JUMPED = true;
+                playerInput.y++;
+            }
         }
-
-        if (Input.GetKey(KeyCode.A))
-        {
-            playerInput.x--;
-        }
-
-
-
-        
-        if (Input.GetKeyDown(KeyCode.Space)  && (legibleJump()|| legibleWallJump())) 
-        {
-            JUMPED = true;
-            playerInput.y++;
-        }
-
         MovementUpdate(playerInput);
 
         coyoteTimeElapsed+=Time.deltaTime;
@@ -143,7 +156,10 @@ public class PlayerController : MonoBehaviour
     private bool LEFT = false, RIGHT = false, JUMPED = false;
     private Vector2 playerInput;
     public float maxSpeed;
-    
+
+    //dash
+    public float dashDistance, dashTime;
+    private float dashElapsedTime = 0;
 
 
     public bool legibleJump()
@@ -161,11 +177,11 @@ public class PlayerController : MonoBehaviour
         float direction = 0;
         if(Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.left, 0.5f, solidGround))//check left
         {
-            Debug.Log("left");
+            //Debug.Log("left");
             direction = 0;//left
         }else if(Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.right, 0.5f, solidGround))//check right
         {
-            Debug.Log("right");
+            //Debug.Log("right");
             direction = 1;//right
         }
         else//we don't see any legible position so 
@@ -186,6 +202,40 @@ public class PlayerController : MonoBehaviour
     }
 
 
+    public bool DASHING;
+    private bool hadDashed;
+
+    public bool dashLegible()
+    {
+        if (!hadDashed)// if we hadn't dashed AND we aren't in the middle of a dash
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 
+     * */
+    public int wallCollision()
+    {
+        int direction = -1;
+        if (Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.left, 0.5f, solidGround))//check left
+        {
+            //Debug.Log("left");
+            direction = 0;//left
+        }
+        else if (Physics2D.BoxCast(transform.position, new Vector2(0.1f, 0.5f), 0, Vector2.right, 0.5f, solidGround))//check right
+        {
+            //Debug.Log("right");
+            direction = 1;//right
+        }
+        else//we don't see any legible position so 
+        {
+            direction = -1;
+        }
+        return direction;
+    }
 
 
     private void MovementUpdate(Vector2 playerInput)
@@ -214,19 +264,52 @@ public class PlayerController : MonoBehaviour
             rb.velocity = new Vector2(rb.velocity.x, -terminalVelocity);
         }
     }//end movement update
-
+    
     private bool FALLING = false;
+
+
+
+
+
+
     private void FixedUpdate()
     {
+
+        if (IsGrounded())
+        {
+            hadDashed = false; // reset the dash when the player touches the floor
+        }
+
+        //******************************************** DASH
+        dashElapsedTime += Time.fixedDeltaTime;
+        //stop dash if either the elasped time is the dash time OR if they hit a wall
+        if (dashElapsedTime >= dashTime || wallCollision() != -1)
+        {
+            DASHING = false;
+        }
+
+        if (DASHING)
+        {
+            if(GetFacingDirection() == FacingDirection.right)
+                rb.velocity = new Vector2(dashDistance/dashTime, rb.velocity.y);
+            else
+                rb.velocity = new Vector2(-dashDistance / dashTime, rb.velocity.y);
+        }
+
+
+
+
         FALLING = rb.velocity.y < 0; //we are falling if velocity is < 0
 
         //horizontal movement
         if (RIGHT)
         {
+            Debug.Log("right");
             rb.velocity += Vector2.right * Time.fixedDeltaTime * acceleration;
         }
         else if (LEFT)
         {
+            Debug.Log("left");
             rb.velocity += Vector2.left * Time.fixedDeltaTime * acceleration;
         }
         else // if we aren't moving then we should slow down

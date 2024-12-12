@@ -1729,16 +1729,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   acceleration: 10
-  deceleration: 1
+  deceleration: 4
   maxSpeed: 3
   currentCharacterState: 0
   previousCharacterState: 0
-  dashDistance: 4
-  dashTime: 0.5
+  dashDistance: 5
+  dashTime: 0.25
+  maxWallJumps: 2
   terminalVelocity: 10
   apexTime: 0.75
   apexHeight: 4
-  fallTime: 0.5
+  fallTime: 0.3
   coyoteTime: 4
   currentHealth: 10
   solidGround:

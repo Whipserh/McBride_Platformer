@@ -27,6 +27,9 @@ public class PlayerController : MonoBehaviour
     public float dashDistance, dashTime;
     private float dashElapsedTime = 0;
 
+    //wall jump varibales
+    private int currentWallJumps;
+    public int maxWallJumps = 2;
 
     private bool FALLING = false;
 
@@ -58,6 +61,7 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+        currentWallJumps = 0;
         DASHING = false;
         rb = gameObject.GetComponent<Rigidbody2D>();
     }
@@ -117,6 +121,8 @@ public class PlayerController : MonoBehaviour
         }
 
 
+        //any code that we implement that is frame specific
+
         if (!IsGrounded())//we are in the air
         {
             //Debug.Log("in the air");
@@ -124,6 +130,7 @@ public class PlayerController : MonoBehaviour
         }
         else//we landed
         {
+            currentWallJumps = 0;//reset the number of wall jumps 
             hadDashed = false; // reset the dash when the player touches the floor
             JUMPED = false; //reset the jump when the player touches the ground
         }
@@ -212,8 +219,9 @@ public class PlayerController : MonoBehaviour
 
 
         //check to see if the player is mid air
-        if (!IsGrounded())
+        if (!IsGrounded()&&currentWallJumps<maxWallJumps)
         {
+            currentWallJumps++;
             //project the player in the opposite direction from the wall
             rb.velocity= Vector2.Lerp(new Vector2(2*maxSpeed, rb.velocity.y), new Vector2(-2*maxSpeed, rb.velocity.y), direction);
             return true;
@@ -221,6 +229,7 @@ public class PlayerController : MonoBehaviour
         return false;
     }
 
+     
 
 
     public bool dashLegible()

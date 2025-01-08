@@ -267,6 +267,12 @@ public class PlayerController : MonoBehaviour
 
     private void MovementUpdate(Vector2 playerInput)
     {
+        //JUMP - this is up here and not in the fixed update because the change happens in the frame not the , plus its an instant change not a change over time
+        float initalJumpVelocoty = 2 * apexHeight / apexTime;
+        if (playerInput.y > 0)//either the player is grounded or its been a couple of seconds since they left the ground
+        {
+            rb.velocity = new Vector2(rb.velocity.x, initalJumpVelocoty);
+        }
 
         Debug.Log(playerInput);
 
@@ -281,12 +287,7 @@ public class PlayerController : MonoBehaviour
             rb.velocity = new Vector2(maxSpeed * direction, rb.velocity.y);
         }
 
-        //JUMP - this is up here and not in the fixed update because the change happens in the frame not the , plus its an instant change not a change over time
-        float initalJumpVelocoty = 2 * apexHeight / apexTime;
-        if (playerInput.y > 0)//either the player is grounded or its been a couple of seconds since they left the ground
-        {
-            rb.velocity = new Vector2(rb.velocity.x, initalJumpVelocoty);
-        }
+      
 
         //PLAYER TERMINAL VELOCITY
         if (rb.velocity.y < -terminalVelocity)
